@@ -5,7 +5,8 @@ import java.io.File
 const val MENU = "\nМеню:\n1 – Учить слова\n2 – Статистика\n0 – Выход\n"
 const val LEARNED_COUNT = 3
 const val ONE_HUNDRED_PERCENT = 100
-val allowableAnswerValues = (0..4)
+const val NUMBER_OF_ANSWERS = 4
+val allowableAnswerValues = (0..NUMBER_OF_ANSWERS)
 
 data class Word(
     val original: String,
@@ -52,7 +53,7 @@ fun learnWords(dictionary: MutableList<Word>) {
             return
         }
 
-        val questionWords = notLearnedList.shuffled().take(4)
+        val questionWords = notLearnedList.shuffled().take(NUMBER_OF_ANSWERS)
         val correctAnswer = questionWords.random()
         val correctAnswerIndex = questionWords.indexOf(correctAnswer)
         println("\n${correctAnswer.original}:")
