@@ -3,6 +3,8 @@ package com.renegatemaster
 import java.io.File
 
 const val MENU = "Меню:\n1 – Учить слова\n2 – Статистика\n0 – Выход"
+const val LEARNED_COUNT = 3
+const val ONE_HUNDRED_PERCENT = 100
 
 data class Word(
     val original: String,
@@ -39,7 +41,13 @@ fun main() {
         val input = readln()
         when (input) {
             "1" -> println("Учить слова")
-            "2" -> println("Статистика")
+            "2" -> {
+                val totalCount = dictionary.size
+                val correctAnswersCount = dictionary.filter { it.correctAnswersCount >= LEARNED_COUNT }.size
+                val percent = correctAnswersCount * ONE_HUNDRED_PERCENT / totalCount
+                println("Выучено $correctAnswersCount из $totalCount слов | $percent%\n")
+            }
+
             "0" -> break
             else -> println("Введите число 1, 2 или 0")
         }
