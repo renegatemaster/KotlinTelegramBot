@@ -35,12 +35,26 @@ fun loadDictionary(): MutableList<Word> {
 
 fun main() {
     val dictionary = loadDictionary()
+    val notLearnedList = dictionary.filter { it.correctAnswersCount < LEARNED_COUNT }
 
     while (true) {
         println(MENU)
         val input = readln()
         when (input) {
-            "1" -> println("Учить слова")
+            "1" -> {
+                if (notLearnedList.isEmpty()) {
+                    println("\nВсе слова в словаре выучены")
+                    continue
+                }
+                val questionWords = notLearnedList.shuffled().take(4)
+                val correctAnswer = questionWords.random()
+                println("\n${correctAnswer.original}:")
+                questionWords.forEachIndexed { index, word ->
+                    println("\t${index + 1} - ${word.translate}")
+                }
+                val answer = readln()
+            }
+
             "2" -> {
                 val totalCount = dictionary.size
                 val correctAnswersCount = dictionary.filter { it.correctAnswersCount >= LEARNED_COUNT }.size
