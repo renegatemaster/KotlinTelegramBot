@@ -13,23 +13,32 @@ data class Question(
     val correctAnswer: Word,
 )
 
-class LearnWordsTrainer {
+class LearnWordsTrainer(
+    private val learnedWordsCount: Int = 3,
+    private val numberOfAnswers: Int = 4
+) {
 
     private var question: Question? = null
     private val dictionary = loadDictionary()
 
     fun getStatistics(): Statistics {
         val totalCount = dictionary.size
-        val correctAnswersCount = dictionary.filter { it.correctAnswersCount >= LEARNED_COUNT }.size
-        val percent = correctAnswersCount * ONE_HUNDRED_PERCENT / totalCount
+        val correctAnswersCount = dictionary.filter { it.correctAnswersCount >= learnedWordsCount }.size
+        val percent = if (totalCount > 0) correctAnswersCount * ONE_HUNDRED_PERCENT / totalCount else 0
         return Statistics(totalCount = totalCount, correctAnswersCount = correctAnswersCount, percent = percent)
     }
 
     fun getNextQuestion(): Question? {
-        val notLearnedList = dictionary.filter { it.correctAnswersCount < LEARNED_COUNT }
+        val notLearnedList = dictionary.filter { it.correctAnswersCount < learnedWordsCount }
         if (notLearnedList.isEmpty()) return null
+        val variants = if (notLearnedList.size < numberOfAnswers) {
+            val learnedList = dictionary.filter { it.correctAnswersCount > learnedWordsCount }.shuffled()
+            notLearnedList.shuffled().take(numberOfAnswers) +
+                    learnedList.take(numberOfAnswers - notLearnedList.size)
+        } else {
+            notLearnedList.shuffled().take(numberOfAnswers)
+        }.shuffled()
 
-        val variants = notLearnedList.shuffled().take(NUMBER_OF_ANSWERS)
         val correctAnswer = variants.random()
         question = Question(variants = variants, correctAnswer = correctAnswer)
 
@@ -52,12 +61,16 @@ class LearnWordsTrainer {
     private fun loadDictionary(): MutableList<Word> {
         val words = File("words.txt")
         val dictionary = mutableListOf<Word>()
+        val numberOfComponents = 3
 
-        words.readLines().forEach {
-            val parts = it.split("|")
+        for (word in words.readLines()) {
+            val parts = word.split("|")
+            if (parts.size < numberOfComponents) continue
+
             val original: String = parts.getOrNull(0) ?: ""
             val translate: String = parts.getOrNull(1) ?: ""
             val correctAnswersCount: Int = parts.getOrNull(2)?.toIntOrNull() ?: 0
+
             dictionary.add(
                 Word(
                     original = original,

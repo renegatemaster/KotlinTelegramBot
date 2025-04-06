@@ -1,10 +1,8 @@
 package com.renegatemaster
 
 const val MENU = "\nМеню:\n1 – Учить слова\n2 – Статистика\n0 – Выход\n"
-const val LEARNED_COUNT = 3
 const val ONE_HUNDRED_PERCENT = 100
-const val NUMBER_OF_ANSWERS = 4
-val allowableAnswerValues = (0..NUMBER_OF_ANSWERS)
+val allowableAnswerValues = (0..4)
 
 data class Word(
     val original: String,
@@ -57,7 +55,12 @@ fun printStatistics(trainer: LearnWordsTrainer) {
 }
 
 fun main() {
-    val trainer = LearnWordsTrainer()
+    val trainer = try {
+        LearnWordsTrainer(3, 4)
+    } catch (e: Exception) {
+        println("Невозможно загрузить словарь")
+        return
+    }
 
     while (true) {
         println(MENU)
