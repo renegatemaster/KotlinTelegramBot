@@ -8,10 +8,14 @@ import java.net.http.HttpResponse
 class TelegramBotService(
     private val token: String
 ) {
+    companion object {
+        const val BASE_API_URL = "https://api.telegram.org/bot"
+    }
+
+    private val client: HttpClient = HttpClient.newBuilder().build()
 
     fun getUpdates(updateId: Int): String {
-        val urlGetUpdates = "https://api.telegram.org/bot$token/getUpdates?offset=$updateId"
-        val client: HttpClient = HttpClient.newBuilder().build()
+        val urlGetUpdates = "$BASE_API_URL$token/getUpdates?offset=$updateId"
         val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
         val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
 
@@ -22,9 +26,8 @@ class TelegramBotService(
         val allowableMessageSize = 1..4096
         if (text.length !in allowableMessageSize) return
 
-        val sendMessageUrl = "https://api.telegram.org/bot$token/sendMessage?chat_id=$chatId&text=$text"
-        val client: HttpClient = HttpClient.newBuilder().build()
-        val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(sendMessageUrl)).build()
+        val urlSendMessage = "$BASE_API_URL$token/sendMessage?chat_id=$chatId&text=$text"
+        val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlSendMessage)).build()
         val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
 
         println(response.body())
@@ -55,8 +58,8 @@ fun main(args: Array<String>) {
         println(text)
 
         val matchChatId: MatchResult? = chatIdRegex.find(updates)
-        val chatId = matchChatId?.groups?.get(1)?.value?.toInt()
+        val chatId = matchChatId?.groups?.get(1)?.value?.toInt() ?: continue
 
-        if (text?.lowercase() == "hello" && chatId != null) bot.sendMessage(chatId, "Hello")
+        if (text?.lowercase() == "hello") bot.sendMessage(chatId, "Hello")
     }
 }
