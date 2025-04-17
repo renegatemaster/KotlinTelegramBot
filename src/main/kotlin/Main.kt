@@ -4,12 +4,6 @@ const val MENU = "\nМеню:\n1 – Учить слова\n2 – Статист
 const val ONE_HUNDRED_PERCENT = 100
 val allowableAnswerValues = (0..4)
 
-data class Word(
-    val original: String,
-    val translate: String,
-    var correctAnswersCount: Int = 0,
-)
-
 fun Question.asConsoleString(): String {
     val variants = this.variants
         .mapIndexed { index: Int, word: Word -> "\t${index + 1} - ${word.translate}" }
