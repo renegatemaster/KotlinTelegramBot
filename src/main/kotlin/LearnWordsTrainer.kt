@@ -2,6 +2,12 @@ package com.renegatemaster
 
 import java.io.File
 
+data class Word(
+    val original: String,
+    val translate: String,
+    var correctAnswersCount: Int = 0,
+)
+
 data class Statistics(
     val totalCount: Int,
     val correctAnswersCount: Int,
