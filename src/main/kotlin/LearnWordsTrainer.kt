@@ -24,7 +24,7 @@ class LearnWordsTrainer(
     private val numberOfAnswers: Int = 4
 ) {
 
-    private var question: Question? = null
+    var question: Question? = null
     private val dictionary = loadDictionary()
 
     fun getStatistics(): Statistics {
