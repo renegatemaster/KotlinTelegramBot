@@ -185,7 +185,6 @@ fun main(args: Array<String>) {
         val chatId = chatIdRegex.find(updates)?.groups?.get(1)?.value?.toIntOrNull() ?: continue
         val data = dataRegex.find(updates)?.groups?.get(1)?.value
 
-        if (message?.lowercase() == "hello") bot.sendMessage(chatId, "Hello")
         if (message?.lowercase() == "/start") bot.sendMenu(chatId)
         if (data?.lowercase() == STATISTICS_CLICKED) getStatisticsAndSend(trainer, bot, chatId)
         if (data?.lowercase() == LEARN_WORDS_CLICKED) checkNextQuestionAndSend(trainer, bot, chatId)
