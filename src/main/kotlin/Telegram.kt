@@ -1,5 +1,6 @@
 package com.renegatemaster
 
+import com.renegatemaster.TelegramBotService.Companion.CALLBACK_DATA_ANSWER_PREFIX
 import com.renegatemaster.TelegramBotService.Companion.LEARN_WORDS_CLICKED
 import com.renegatemaster.TelegramBotService.Companion.STATISTICS_CLICKED
 import java.net.URI
@@ -141,6 +142,24 @@ fun checkNextQuestionAndSend(
     }
 }
 
+fun handleAnswer(
+    data: String,
+    trainer: LearnWordsTrainer,
+    telegramBotService: TelegramBotService,
+    chatId: Int
+) {
+    val userAnswerIndex = data.substringAfter(CALLBACK_DATA_ANSWER_PREFIX).toInt()
+    if (trainer.checkAnswer(userAnswerIndex)) {
+        telegramBotService.sendMessage(chatId, "Правильно!")
+    } else {
+        telegramBotService.sendMessage(
+            chatId,
+            "Неправильно! ${trainer.question?.correctAnswer?.original} — это ${trainer.question?.correctAnswer?.translate}"
+        )
+    }
+    checkNextQuestionAndSend(trainer, telegramBotService, chatId)
+}
+
 fun main(args: Array<String>) {
 
     val botToken = args[0]
@@ -169,5 +188,6 @@ fun main(args: Array<String>) {
         if (message?.lowercase() == "/start") bot.sendMenu(chatId)
         if (data?.lowercase() == STATISTICS_CLICKED) getStatisticsAndSend(trainer, bot, chatId)
         if (data?.lowercase() == LEARN_WORDS_CLICKED) checkNextQuestionAndSend(trainer, bot, chatId)
+        if (data is String && data.startsWith(CALLBACK_DATA_ANSWER_PREFIX)) handleAnswer(data, trainer, bot, chatId)
     }
 }
