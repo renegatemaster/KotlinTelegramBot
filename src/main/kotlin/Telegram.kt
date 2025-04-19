@@ -1,5 +1,6 @@
 package com.renegatemaster
 
+import com.renegatemaster.TelegramBotService.Companion.STATISTICS_CLICKED
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -12,6 +13,8 @@ class TelegramBotService(
 ) {
     companion object {
         const val BASE_API_URL = "https://api.telegram.org/bot"
+        const val LEARN_WORDS_CLICKED = "learn_words_clicked"
+        const val STATISTICS_CLICKED = "statistics_clicked"
     }
 
     private val client: HttpClient = HttpClient.newBuilder().build()
@@ -51,11 +54,11 @@ class TelegramBotService(
                         [
                             {
                                 "text": "Учить слова",
-                                "callback_data": "learn_words_clicked"
+                                "callback_data": "$LEARN_WORDS_CLICKED"
                             },
                             {
                                 "text": "Статистика",
-                                "callback_data": "statistics_clicked"
+                                "callback_data": "$STATISTICS_CLICKED"
                             }
                         ]
                     ]
@@ -101,6 +104,11 @@ fun main(args: Array<String>) {
 
         if (message?.lowercase() == "hello") bot.sendMessage(chatId, "Hello")
         if (message?.lowercase() == "/start") bot.sendMenu(chatId)
-        if (data?.lowercase() == "statistics_clicked") bot.sendMessage(chatId, "Выучено 10 из 10 слов | 100%")
+        if (data?.lowercase() == STATISTICS_CLICKED) {
+            val statistics = trainer.getStatistics().let {
+                "Выучено ${it.correctAnswersCount} из ${it.totalCount} слов | ${it.percent}%"
+            }
+            bot.sendMessage(chatId, statistics)
+        }
     }
 }
