@@ -1,5 +1,6 @@
 package com.renegatemaster
 
+import com.renegatemaster.TelegramBotService.Companion.LEARN_WORDS_CLICKED
 import com.renegatemaster.TelegramBotService.Companion.STATISTICS_CLICKED
 import java.net.URI
 import java.net.URLEncoder
@@ -15,6 +16,7 @@ class TelegramBotService(
         const val BASE_API_URL = "https://api.telegram.org/bot"
         const val LEARN_WORDS_CLICKED = "learn_words_clicked"
         const val STATISTICS_CLICKED = "statistics_clicked"
+        const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
     }
 
     private val client: HttpClient = HttpClient.newBuilder().build()
@@ -75,6 +77,68 @@ class TelegramBotService(
 
         println(response.body())
     }
+
+    fun sendQuestion(chatId: Int, question: Question) {
+        val urlSendQuestion = "$BASE_API_URL$token/sendMessage"
+
+        val variants = question.variants
+            .mapIndexed { index: Int, word: Word ->
+                """
+                [
+                    {
+                        "text": "${word.translate}",
+                        "callback_data": "$CALLBACK_DATA_ANSWER_PREFIX$index"
+                    }
+                ]
+                """.trimIndent()
+            }
+            .joinToString(separator = "\n,")
+
+        val sendQuestionBody = """
+            {
+                "chat_id": $chatId,
+                "text": "${question.correctAnswer.original}",
+                "reply_markup": {
+                    "inline_keyboard": [
+                        $variants
+                    ]
+                }
+            }
+            """.trimIndent()
+
+        val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlSendQuestion))
+            .header("Content-type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(sendQuestionBody))
+            .build()
+
+        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
+
+        println(response.body())
+    }
+}
+
+fun getStatisticsAndSend(
+    trainer: LearnWordsTrainer,
+    telegramBotService: TelegramBotService,
+    chatId: Int
+) {
+    val statistics = trainer.getStatistics().let {
+        "Выучено ${it.correctAnswersCount} из ${it.totalCount} слов | ${it.percent}%"
+    }
+    telegramBotService.sendMessage(chatId, statistics)
+}
+
+fun checkNextQuestionAndSend(
+    trainer: LearnWordsTrainer,
+    telegramBotService: TelegramBotService,
+    chatId: Int
+) {
+    val question = trainer.getNextQuestion()
+    if (question == null) {
+        telegramBotService.sendMessage(chatId, "Все слова в словаре выучены")
+    } else {
+        telegramBotService.sendQuestion(chatId, question)
+    }
 }
 
 fun main(args: Array<String>) {
@@ -102,13 +166,8 @@ fun main(args: Array<String>) {
         val chatId = chatIdRegex.find(updates)?.groups?.get(1)?.value?.toIntOrNull() ?: continue
         val data = dataRegex.find(updates)?.groups?.get(1)?.value
 
-        if (message?.lowercase() == "hello") bot.sendMessage(chatId, "Hello")
         if (message?.lowercase() == "/start") bot.sendMenu(chatId)
-        if (data?.lowercase() == STATISTICS_CLICKED) {
-            val statistics = trainer.getStatistics().let {
-                "Выучено ${it.correctAnswersCount} из ${it.totalCount} слов | ${it.percent}%"
-            }
-            bot.sendMessage(chatId, statistics)
-        }
+        if (data?.lowercase() == STATISTICS_CLICKED) getStatisticsAndSend(trainer, bot, chatId)
+        if (data?.lowercase() == LEARN_WORDS_CLICKED) checkNextQuestionAndSend(trainer, bot, chatId)
     }
 }
