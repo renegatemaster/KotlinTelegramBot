@@ -32,7 +32,7 @@ class TelegramBotService(
         return response.body()
     }
 
-    fun sendMessage(chatId: Int, message: String) {
+    fun sendMessage(chatId: Long, message: String) {
         val allowableMessageSize = 1..4096
         if (message.length !in allowableMessageSize) return
 
@@ -48,7 +48,7 @@ class TelegramBotService(
         println(response.body())
     }
 
-    fun sendMenu(chatId: Int) {
+    fun sendMenu(chatId: Long) {
         val urlSendMenu = "$BASE_API_URL$token/sendMessage"
         val sendMenuBody = """
             {
@@ -81,7 +81,7 @@ class TelegramBotService(
         println(response.body())
     }
 
-    fun sendQuestion(chatId: Int, question: Question) {
+    fun sendQuestion(chatId: Long, question: Question) {
         val urlSendQuestion = "$BASE_API_URL$token/sendMessage"
 
         val variants = question.variants
@@ -123,7 +123,7 @@ class TelegramBotService(
 fun getStatisticsAndSend(
     trainer: LearnWordsTrainer,
     telegramBotService: TelegramBotService,
-    chatId: Int
+    chatId: Long
 ) {
     val statistics = trainer.getStatistics().let {
         "Выучено ${it.correctAnswersCount} из ${it.totalCount} слов | ${it.percent}%"
@@ -134,7 +134,7 @@ fun getStatisticsAndSend(
 fun checkNextQuestionAndSend(
     trainer: LearnWordsTrainer,
     telegramBotService: TelegramBotService,
-    chatId: Int
+    chatId: Long
 ) {
     val question = trainer.getNextQuestion()
     if (question == null) {
@@ -148,7 +148,7 @@ fun handleAnswer(
     data: String,
     trainer: LearnWordsTrainer,
     telegramBotService: TelegramBotService,
-    chatId: Int
+    chatId: Long
 ) {
     val userAnswerIndex = data.substringAfter(CALLBACK_DATA_ANSWER_PREFIX).toInt()
     if (trainer.checkAnswer(userAnswerIndex)) {
@@ -170,7 +170,7 @@ fun main(args: Array<String>) {
     var lastUpdateId = 0
     val updateIdRegex: Regex = "\"update_id\":(\\d+)".toRegex()
     val messageTextRegex: Regex = "\"text\":\"(.+?)\"".toRegex()
-    val chatIdRegex: Regex = "\"chat\":\\{\"id\":(\\d+)".toRegex()
+    val chatIdRegex: Regex = "\"chat\":\\{\"id\":(-*\\d+)".toRegex()
     val dataRegex: Regex = "\"data\":\"(.+?)\"".toRegex()
 
     val trainer = LearnWordsTrainer()
@@ -184,11 +184,11 @@ fun main(args: Array<String>) {
         lastUpdateId = updateId + 1
 
         val message = messageTextRegex.find(updates)?.groups?.get(1)?.value
-        val chatId = chatIdRegex.find(updates)?.groups?.get(1)?.value?.toIntOrNull() ?: continue
+        val chatId = chatIdRegex.find(updates)?.groups?.get(1)?.value?.toLongOrNull() ?: continue
         val data = dataRegex.find(updates)?.groups?.get(1)?.value
 
-        if (message?.lowercase() == START) bot.sendMenu(chatId)
         when {
+            message?.lowercase() == START -> bot.sendMenu(chatId)
             data?.lowercase() == STATISTICS_CLICKED -> getStatisticsAndSend(trainer, bot, chatId)
             data?.lowercase() == LEARN_WORDS_CLICKED -> checkNextQuestionAndSend(trainer, bot, chatId)
             data?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true -> handleAnswer(data, trainer, bot, chatId)
