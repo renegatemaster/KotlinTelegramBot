@@ -1,6 +1,8 @@
 package com.renegatemaster
 
+import com.renegatemaster.TelegramBotService.Companion.CALLBACK_DATA_ANSWER_PREFIX
 import com.renegatemaster.TelegramBotService.Companion.LEARN_WORDS_CLICKED
+import com.renegatemaster.TelegramBotService.Companion.START
 import com.renegatemaster.TelegramBotService.Companion.STATISTICS_CLICKED
 import java.net.URI
 import java.net.URLEncoder
@@ -14,6 +16,7 @@ class TelegramBotService(
 ) {
     companion object {
         const val BASE_API_URL = "https://api.telegram.org/bot"
+        const val START = "/start"
         const val LEARN_WORDS_CLICKED = "learn_words_clicked"
         const val STATISTICS_CLICKED = "statistics_clicked"
         const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
@@ -141,6 +144,24 @@ fun checkNextQuestionAndSend(
     }
 }
 
+fun handleAnswer(
+    data: String,
+    trainer: LearnWordsTrainer,
+    telegramBotService: TelegramBotService,
+    chatId: Int
+) {
+    val userAnswerIndex = data.substringAfter(CALLBACK_DATA_ANSWER_PREFIX).toInt()
+    if (trainer.checkAnswer(userAnswerIndex)) {
+        telegramBotService.sendMessage(chatId, "Правильно!")
+    } else {
+        telegramBotService.sendMessage(
+            chatId,
+            "Неправильно! ${trainer.question?.correctAnswer?.original} — это ${trainer.question?.correctAnswer?.translate}"
+        )
+    }
+    checkNextQuestionAndSend(trainer, telegramBotService, chatId)
+}
+
 fun main(args: Array<String>) {
 
     val botToken = args[0]
@@ -166,8 +187,11 @@ fun main(args: Array<String>) {
         val chatId = chatIdRegex.find(updates)?.groups?.get(1)?.value?.toIntOrNull() ?: continue
         val data = dataRegex.find(updates)?.groups?.get(1)?.value
 
-        if (message?.lowercase() == "/start") bot.sendMenu(chatId)
-        if (data?.lowercase() == STATISTICS_CLICKED) getStatisticsAndSend(trainer, bot, chatId)
-        if (data?.lowercase() == LEARN_WORDS_CLICKED) checkNextQuestionAndSend(trainer, bot, chatId)
+        if (message?.lowercase() == START) bot.sendMenu(chatId)
+        when {
+            data?.lowercase() == STATISTICS_CLICKED -> getStatisticsAndSend(trainer, bot, chatId)
+            data?.lowercase() == LEARN_WORDS_CLICKED -> checkNextQuestionAndSend(trainer, bot, chatId)
+            data?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true -> handleAnswer(data, trainer, bot, chatId)
+        }
     }
 }
