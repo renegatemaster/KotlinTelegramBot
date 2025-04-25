@@ -1,23 +1,10 @@
-package com.renegatemaster
+package com.renegatemaster.englishwordsbot.trainer
 
+import com.renegatemaster.englishwordsbot.trainer.model.Question
+import com.renegatemaster.englishwordsbot.trainer.model.Statistics
+import com.renegatemaster.englishwordsbot.trainer.model.Word
+import com.renegatemaster.englishwordsbot.console.ONE_HUNDRED_PERCENT
 import java.io.File
-
-data class Word(
-    val original: String,
-    val translate: String,
-    var correctAnswersCount: Int = 0,
-)
-
-data class Statistics(
-    val totalCount: Int,
-    val correctAnswersCount: Int,
-    val percent: Int,
-)
-
-data class Question(
-    val variants: List<Word>,
-    val correctAnswer: Word,
-)
 
 class LearnWordsTrainer(
     private val learnedWordsCount: Int = 3,
