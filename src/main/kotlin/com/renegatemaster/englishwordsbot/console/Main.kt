@@ -1,4 +1,8 @@
-package com.renegatemaster
+package com.renegatemaster.englishwordsbot.console
+
+import com.renegatemaster.englishwordsbot.trainer.LearnWordsTrainer
+import com.renegatemaster.englishwordsbot.trainer.model.Question
+import com.renegatemaster.englishwordsbot.trainer.model.Word
 
 const val MENU = "\nМеню:\n1 – Учить слова\n2 – Статистика\n0 – Выход\n"
 const val ONE_HUNDRED_PERCENT = 100
