@@ -3,9 +3,11 @@ package com.renegatemaster.englishwordsbot.telegram
 import com.renegatemaster.englishwordsbot.trainer.LearnWordsTrainer
 import com.renegatemaster.englishwordsbot.telegram.TelegramBotService.Companion.CALLBACK_DATA_ANSWER_PREFIX
 import com.renegatemaster.englishwordsbot.telegram.TelegramBotService.Companion.LEARN_WORDS_CLICKED
+import com.renegatemaster.englishwordsbot.telegram.TelegramBotService.Companion.RESET_CLICKED
 import com.renegatemaster.englishwordsbot.telegram.TelegramBotService.Companion.START
 import com.renegatemaster.englishwordsbot.telegram.TelegramBotService.Companion.STATISTICS_CLICKED
 import com.renegatemaster.englishwordsbot.telegram.entities.Response
+import com.renegatemaster.englishwordsbot.telegram.entities.Update
 
 fun getStatisticsAndSend(
     trainer: LearnWordsTrainer,
@@ -49,31 +51,48 @@ fun handleAnswer(
     checkNextQuestionAndSend(trainer, telegramBotService, chatId)
 }
 
+fun resetProgress(
+    trainer: LearnWordsTrainer,
+    telegramBotService: TelegramBotService,
+    chatId: Long,
+) {
+    trainer.resetProgress()
+    telegramBotService.sendMessage(chatId, "Прогресс сброшен")
+}
+
+fun handleUpdate(
+    update: Update,
+    trainers: HashMap<Long, LearnWordsTrainer>,
+    telegramBotService: TelegramBotService,
+) {
+    val message = update.message?.text
+    val chatId = update.message?.chat?.id ?: update.callbackQuery?.message?.chat?.id ?: return
+    val trainer = trainers.getOrPut(chatId) { LearnWordsTrainer("$chatId.txt") }
+    val data = update.callbackQuery?.data
+
+    when {
+        message?.lowercase() == START -> telegramBotService.sendMenu(chatId)
+        data?.lowercase() == STATISTICS_CLICKED -> getStatisticsAndSend(trainer, telegramBotService, chatId)
+        data?.lowercase() == LEARN_WORDS_CLICKED -> checkNextQuestionAndSend(trainer, telegramBotService, chatId)
+        data?.lowercase() == RESET_CLICKED -> resetProgress(trainer, telegramBotService, chatId)
+        data?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true -> handleAnswer(data, trainer, telegramBotService, chatId)
+    }
+}
+
 fun main(args: Array<String>) {
 
     val botToken = args[0]
     val bot = TelegramBotService(botToken)
     var lastUpdateId = 0L
-
-    val trainer = LearnWordsTrainer()
+    val trainers = HashMap<Long, LearnWordsTrainer>()
 
     while (true) {
         Thread.sleep(2000)
         val response: Response = bot.getUpdates(lastUpdateId)
-        val updates = response.result
-        val firstUpdate = updates.firstOrNull() ?: continue
-        val updateId = firstUpdate.updateId
-        lastUpdateId = updateId + 1
+        if (response.result.isEmpty()) continue
 
-        val message = firstUpdate.message?.text
-        val chatId = firstUpdate.message?.chat?.id ?: firstUpdate.callbackQuery?.message?.chat?.id ?: continue
-        val data = firstUpdate.callbackQuery?.data
-
-        when {
-            message?.lowercase() == START -> bot.sendMenu(chatId)
-            data?.lowercase() == STATISTICS_CLICKED -> getStatisticsAndSend(trainer, bot, chatId)
-            data?.lowercase() == LEARN_WORDS_CLICKED -> checkNextQuestionAndSend(trainer, bot, chatId)
-            data?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true -> handleAnswer(data, trainer, bot, chatId)
-        }
+        val sortedUpdates = response.result.sortedBy { it.updateId }
+        sortedUpdates.forEach { handleUpdate(it, trainers, bot) }
+        lastUpdateId = sortedUpdates.last().updateId + 1
     }
 }

@@ -1,11 +1,8 @@
 package com.renegatemaster.englishwordsbot.telegram
 
+import com.renegatemaster.englishwordsbot.telegram.entities.*
 import com.renegatemaster.englishwordsbot.trainer.model.Question
 import com.renegatemaster.englishwordsbot.trainer.model.Word
-import com.renegatemaster.englishwordsbot.telegram.entities.InlineKeyboard
-import com.renegatemaster.englishwordsbot.telegram.entities.ReplyMarkup
-import com.renegatemaster.englishwordsbot.telegram.entities.Response
-import com.renegatemaster.englishwordsbot.telegram.entities.SendMessageRequest
 import kotlinx.serialization.json.Json
 import java.net.URI
 import java.net.http.HttpClient
@@ -20,6 +17,7 @@ class TelegramBotService(
         const val START = "/start"
         const val LEARN_WORDS_CLICKED = "learn_words_clicked"
         const val STATISTICS_CLICKED = "statistics_clicked"
+        const val RESET_CLICKED = "reset_clicked"
         const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
     }
 
@@ -70,6 +68,9 @@ class TelegramBotService(
                     listOf(
                         InlineKeyboard(text = "Изучать слова", callbackData = LEARN_WORDS_CLICKED),
                         InlineKeyboard(text = "Статистика", callbackData = STATISTICS_CLICKED),
+                    ),
+                    listOf(
+                        InlineKeyboard(text = "Сбросить прогресс", callbackData = RESET_CLICKED),
                     )
                 )
             )
