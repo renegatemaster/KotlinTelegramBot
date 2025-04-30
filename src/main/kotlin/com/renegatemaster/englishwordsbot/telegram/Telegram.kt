@@ -3,11 +3,30 @@ package com.renegatemaster.englishwordsbot.telegram
 import com.renegatemaster.englishwordsbot.trainer.LearnWordsTrainer
 import com.renegatemaster.englishwordsbot.telegram.TelegramBotService.Companion.CALLBACK_DATA_ANSWER_PREFIX
 import com.renegatemaster.englishwordsbot.telegram.TelegramBotService.Companion.LEARN_WORDS_CLICKED
+import com.renegatemaster.englishwordsbot.telegram.TelegramBotService.Companion.MENU
 import com.renegatemaster.englishwordsbot.telegram.TelegramBotService.Companion.RESET_CLICKED
 import com.renegatemaster.englishwordsbot.telegram.TelegramBotService.Companion.START
 import com.renegatemaster.englishwordsbot.telegram.TelegramBotService.Companion.STATISTICS_CLICKED
 import com.renegatemaster.englishwordsbot.telegram.entities.Response
 import com.renegatemaster.englishwordsbot.telegram.entities.Update
+
+fun main(args: Array<String>) {
+
+    val botToken = args[0]
+    val bot = TelegramBotService(botToken)
+    var lastUpdateId = 0L
+    val trainers = HashMap<Long, LearnWordsTrainer>()
+
+    while (true) {
+        Thread.sleep(2000)
+        val response: Response = bot.getUpdates(lastUpdateId)
+        if (response.result.isEmpty()) continue
+
+        val sortedUpdates = response.result.sortedBy { it.updateId }
+        sortedUpdates.forEach { handleUpdate(it, trainers, bot) }
+        lastUpdateId = sortedUpdates.last().updateId + 1
+    }
+}
 
 fun getStatisticsAndSend(
     trainer: LearnWordsTrainer,
@@ -72,27 +91,10 @@ fun handleUpdate(
 
     when {
         message?.lowercase() == START -> telegramBotService.sendMenu(chatId)
+        data?.lowercase() == MENU -> telegramBotService.sendMenu(chatId)
         data?.lowercase() == STATISTICS_CLICKED -> getStatisticsAndSend(trainer, telegramBotService, chatId)
         data?.lowercase() == LEARN_WORDS_CLICKED -> checkNextQuestionAndSend(trainer, telegramBotService, chatId)
         data?.lowercase() == RESET_CLICKED -> resetProgress(trainer, telegramBotService, chatId)
         data?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true -> handleAnswer(data, trainer, telegramBotService, chatId)
-    }
-}
-
-fun main(args: Array<String>) {
-
-    val botToken = args[0]
-    val bot = TelegramBotService(botToken)
-    var lastUpdateId = 0L
-    val trainers = HashMap<Long, LearnWordsTrainer>()
-
-    while (true) {
-        Thread.sleep(2000)
-        val response: Response = bot.getUpdates(lastUpdateId)
-        if (response.result.isEmpty()) continue
-
-        val sortedUpdates = response.result.sortedBy { it.updateId }
-        sortedUpdates.forEach { handleUpdate(it, trainers, bot) }
-        lastUpdateId = sortedUpdates.last().updateId + 1
     }
 }
