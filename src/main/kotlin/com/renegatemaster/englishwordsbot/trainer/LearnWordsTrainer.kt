@@ -7,6 +7,7 @@ import com.renegatemaster.englishwordsbot.console.ONE_HUNDRED_PERCENT
 import java.io.File
 
 class LearnWordsTrainer(
+    private val fileName: String = "words.txt",
     private val learnedWordsCount: Int = 3,
     private val numberOfAnswers: Int = 4
 ) {
@@ -52,7 +53,10 @@ class LearnWordsTrainer(
     }
 
     private fun loadDictionary(): MutableList<Word> {
-        val words = File("words.txt")
+        val words = File(fileName)
+        if (!words.exists()) {
+            File("words.txt").copyTo(words)
+        }
         val dictionary = mutableListOf<Word>()
         val numberOfComponents = 3
 
@@ -77,10 +81,15 @@ class LearnWordsTrainer(
     }
 
     private fun saveDictionary() {
-        val words = File("words.txt")
+        val words = File(fileName)
         words.writeText("")
         dictionary.forEach { word ->
             words.appendText("${word.original}|${word.translate}|${word.correctAnswersCount}\n")
         }
+    }
+
+    fun resetProgress() {
+        dictionary.forEach { it.correctAnswersCount = 0 }
+        saveDictionary()
     }
 }

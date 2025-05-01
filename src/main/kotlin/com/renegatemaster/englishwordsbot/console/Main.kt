@@ -54,7 +54,7 @@ fun printStatistics(trainer: LearnWordsTrainer) {
 
 fun main() {
     val trainer = try {
-        LearnWordsTrainer(3, 4)
+        LearnWordsTrainer(learnedWordsCount = 3, numberOfAnswers = 4)
     } catch (e: Exception) {
         println("Невозможно загрузить словарь")
         return

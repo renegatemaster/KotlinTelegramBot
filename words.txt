@@ -1,3 +1,31 @@
 hello|привет|0
 dog|собака|0
 cat|кошка|0
+variable|переменная|0
+screen|экран|0
+number|число|0
+information|информация|0
+numerical|числовой|0
+string|строковый|0
+types of data|типы данных|0
+display|отображение|0
+program|программа|1
+assign|присвоить|0
+value|значение|0
+to be allocated|выделяться|0
+cell|ячейка|0
+computer memory|память компьютера|0
+store|хранить|0
+to create|создать|0
+the key word|ключевое слово|0
+with a small letter|с маленькой буквы|0
+with a capital letter|с большой буквы|0
+simple|простой|0
+equal sign|знак равенства|0
+assignment operator|оператор присваивания|0
+declare|задекларировать|0
+initialize|инициализировать|0
+notification|уведомление|0
+the user|пользователь|0
+double quotes|двойные кавычки|0
+console|консоль|0

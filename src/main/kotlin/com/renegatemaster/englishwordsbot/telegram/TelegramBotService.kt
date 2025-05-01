@@ -1,11 +1,7 @@
 package com.renegatemaster.englishwordsbot.telegram
 
+import com.renegatemaster.englishwordsbot.telegram.entities.*
 import com.renegatemaster.englishwordsbot.trainer.model.Question
-import com.renegatemaster.englishwordsbot.trainer.model.Word
-import com.renegatemaster.englishwordsbot.telegram.entities.InlineKeyboard
-import com.renegatemaster.englishwordsbot.telegram.entities.ReplyMarkup
-import com.renegatemaster.englishwordsbot.telegram.entities.Response
-import com.renegatemaster.englishwordsbot.telegram.entities.SendMessageRequest
 import kotlinx.serialization.json.Json
 import java.net.URI
 import java.net.http.HttpClient
@@ -18,8 +14,10 @@ class TelegramBotService(
     companion object {
         const val BASE_API_URL = "https://api.telegram.org/bot"
         const val START = "/start"
+        const val MENU = "menu"
         const val LEARN_WORDS_CLICKED = "learn_words_clicked"
         const val STATISTICS_CLICKED = "statistics_clicked"
+        const val RESET_CLICKED = "reset_clicked"
         const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
     }
 
@@ -70,6 +68,9 @@ class TelegramBotService(
                     listOf(
                         InlineKeyboard(text = "Изучать слова", callbackData = LEARN_WORDS_CLICKED),
                         InlineKeyboard(text = "Статистика", callbackData = STATISTICS_CLICKED),
+                    ),
+                    listOf(
+                        InlineKeyboard(text = "Сбросить прогресс", callbackData = RESET_CLICKED),
                     )
                 )
             )
@@ -93,11 +94,23 @@ class TelegramBotService(
             chatId = chatId,
             text = question.correctAnswer.original,
             replyMarkup = ReplyMarkup(
-                listOf(question.variants.mapIndexed { index: Int, word: Word ->
-                    InlineKeyboard(
-                        text = word.translate, callbackData = "$CALLBACK_DATA_ANSWER_PREFIX$index"
+                question.variants.mapIndexed { index, word ->
+                    listOf(
+                        InlineKeyboard(
+                            text = word.translate,
+                            callbackData = "$CALLBACK_DATA_ANSWER_PREFIX$index"
+                        )
                     )
-                })
+                }.plus(
+                    listOf(
+                        listOf(
+                            InlineKeyboard(
+                                text = "В меню",
+                                callbackData = MENU
+                            )
+                        )
+                    )
+                )
             )
         )
         val requestBodyString = json.encodeToString(requestBody)
