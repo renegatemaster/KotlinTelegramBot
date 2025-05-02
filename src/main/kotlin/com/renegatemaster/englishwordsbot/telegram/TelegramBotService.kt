@@ -3,10 +3,12 @@ package com.renegatemaster.englishwordsbot.telegram
 import com.renegatemaster.englishwordsbot.telegram.entities.*
 import com.renegatemaster.englishwordsbot.trainer.model.Question
 import kotlinx.serialization.json.Json
+import java.io.IOException
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.time.Duration
 
 class TelegramBotService(
     private val token: String
@@ -19,9 +21,12 @@ class TelegramBotService(
         const val STATISTICS_CLICKED = "statistics_clicked"
         const val RESET_CLICKED = "reset_clicked"
         const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
+        const val GOAWAY_ERROR = "GOAWAY"
     }
 
-    private val client: HttpClient = HttpClient.newBuilder().build()
+    private val client: HttpClient = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(30))
+        .build()
     private val json = Json {
         ignoreUnknownKeys = true
     }
@@ -29,7 +34,7 @@ class TelegramBotService(
     fun getUpdates(updateId: Long): Response {
         val urlGetUpdates = "$BASE_API_URL$token/getUpdates?offset=$updateId"
         val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
-        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
+        val response: HttpResponse<String> = sendRequestWithRetry(request)
         val responseString = response.body().also { println(it) }
 
         return json.decodeFromString<Response>(responseString)
@@ -52,7 +57,7 @@ class TelegramBotService(
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
 
-        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
+        val response: HttpResponse<String> = sendRequestWithRetry(request)
 
         println(response.body())
     }
@@ -82,7 +87,7 @@ class TelegramBotService(
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
 
-        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
+        val response: HttpResponse<String> = sendRequestWithRetry(request)
 
         println(response.body())
     }
@@ -120,8 +125,25 @@ class TelegramBotService(
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
 
-        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
+        val response: HttpResponse<String> = sendRequestWithRetry(request)
 
         println(response.body())
+    }
+
+    private fun sendRequestWithRetry(request: HttpRequest, maxRetries: Int = 3): HttpResponse<String> {
+        var retryCount = 0
+        while (retryCount < maxRetries) {
+            try {
+                return client.send(request, HttpResponse.BodyHandlers.ofString())
+            } catch (e: IOException) {
+                if (e.message?.contains(GOAWAY_ERROR) == true) {
+                    retryCount++
+                    Thread.sleep(1000 * retryCount.toLong())
+                } else {
+                    throw e
+                }
+            }
+        }
+        throw IOException("Failed after $maxRetries retries")
     }
 }
